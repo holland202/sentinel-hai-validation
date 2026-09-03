@@ -42,4 +42,18 @@ Registered predictions, numbered. An anti-vacuity control showing the
 instrument can return null. Refutations kept and marked, never deleted. Numbers
 in prose pasted verbatim from script output. At least one prediction left unrun.
 
+## Figures
+
+Both figures describe the registered method. Neither shows a result - there are none.
+
+![Prereg gate structure](figures/prereg_gates.png)
+
+P0a and P0b gate everything downstream. If either anti-vacuity control fails, P1 and P3 are void rather than reported. P2 is suspended under amendment 1. P4 is registered and deliberately left unrun.
+
+![FDIA null space](figures/fdia_nullspace.png)
+
+Why P0b can be stated as an exact integer. Residual-based bad-data detection measures distance to the column space of H, so an injection a = Hc moves the measurement along that space and leaves the residual identical. Structured injections are invisible by construction; unstructured ones are not. A nonzero structured-detection count means the implementation is wrong, not the theory.
+
+SVG sources sit beside each PNG.
+
 *Vincit Omnia Veritas.*
