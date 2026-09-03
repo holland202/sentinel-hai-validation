@@ -151,7 +151,7 @@ Stated in advance so that quitting is a decision and not a drift:
 
 ## 3. Amendments
 
-None. Amendments are appended here with a date and a reason, and the original
+Amendments are appended here with a date and a reason, and the original
 text above is left untouched.
 
 ---
@@ -162,3 +162,41 @@ Chad Edward Holland — architecture, method, device verification.
 Claude (Anthropic) — benchmark selection, prediction drafting, review.
 
 AI contributions are credited by model name and are not stripped.
+
+### Amendment 1 — 2026-09-03, before any data was scored
+
+**The version pin moves from HAI 22.04 to HAI 20.07.**
+
+Reason, measured not assumed: every CSV under `hai-22.04/` in
+`github.com/icsdataset/hai` is a Git LFS pointer file of 133-134 bytes, not
+data. `hai-22.04/train1.csv` contains only an LFS spec line, an oid, and
+`size 53190281`. The same holds for `hai-23.05/` and `haiend-23.05/`. Only
+`hai-20.07/` and `hai-21.03/` carry real blobs in git, as `.csv.gz`, and those
+fetch with plain curl.
+
+`hai-20.07/train1.csv.gz` was fetched and read: 35,252,451 bytes gzipped,
+130,293,220 bytes uncompressed, gzip metadata naming the original `train1.csv`
+dated 2020-07-20.
+
+HAI 20.07 is selected over HAI 21.03 on size: four files at roughly 110 MB
+gzipped against eight files at roughly 186 MB, on a phone.
+
+This is the abandonment condition already registered in section 2 — "the pin
+moves to another HAI version, recorded as an amendment with the reason, before
+any scoring run." It fired as intended. No detector has run and no score exists
+at the time of this amendment.
+
+**Schema observed in the container, not yet device-verified:** 63 columns,
+**semicolon-delimited**, not comma. Label columns are `attack`, `attack_P1`,
+`attack_P2`, `attack_P3` — a global flag plus per-process flags. Training files
+carry the label columns, which is what P0a requires. Sampling is one second,
+beginning 2019-09-11 20:00:00.
+
+**Open item raised by this amendment, not resolved by it.** P2 refers to "the
+best published eTaPR result from the HAI anomaly-detection contest" without
+naming the contest edition or the HAI version it scored against. If that
+contest ran on 21.03 or 22.04, a 20.07 result has no floor to compare with and
+P2 is unresolvable as written. P2 is therefore **suspended** until a specific,
+citable result on HAI 20.07 is identified. If none exists, P2 will be amended
+again — restated against a named published baseline or withdrawn — and the
+withdrawal will be recorded here rather than deleted above.
