@@ -200,3 +200,58 @@ P2 is unresolvable as written. P2 is therefore **suspended** until a specific,
 citable result on HAI 20.07 is identified. If none exists, P2 will be amended
 again — restated against a named published baseline or withdrawn — and the
 withdrawal will be recorded here rather than deleted above.
+
+### Amendment 2 — 2026-09-03, before any data was fetched
+
+**P0b is restated. The original text above is unchanged and still stands as
+written; this amendment narrows an overreaching claim inside it.**
+
+The original P0b says: "A nonzero structured-detection count means the
+implementation is wrong, not the theory." That is too strong, and the error is
+Claude's, raised by an external AI review before any run.
+
+The invariance is a theorem, but a conditional one. For the linear DC model
+with weighted least squares, an injection `a = Hc` on the measurement vector
+induces a state displacement `c`, and
+
+    r' = (z + Hc) - H(x-hat + c) = z - H x-hat = r
+
+**only under all of the following:**
+
+- **A1** The `H` used to construct `a` is bit-identical to the `H` used by the
+  estimator. A topology or ordering mismatch breaks invariance.
+- **A2** The estimator is linear WLS with no bad-data rejection or measurement
+  removal loop active during the test. An iterative largest-normalised-residual
+  loop is not invariant.
+- **A3** No clipping, saturation, or range limiting is applied to `z` or to the
+  state.
+- **A4** Exact arithmetic. In floating point `r' = r + O(eps * ||z||)`, not
+  exactly `r`.
+- **A5** The detection threshold is not being evaluated at a knife edge, where
+  an `O(eps)` perturbation could flip the verdict.
+
+**Revised P0b, registered:**
+
+Construct N = 200 structured injections `a = Hc` and N = 200 unstructured
+injections of matched L2 magnitude on the IEEE 14-bus DC model.
+
+- Predicted: residual BDD detects **0 of 200** structured injections.
+- Predicted: residual BDD detects **>= 190 of 200** unstructured injections at
+  the same threshold.
+- Predicted: `max |r' - r|` over the 200 structured cases is at or below a
+  tolerance stated in the script and derived from machine epsilon and `||z||`,
+  not assumed to be zero.
+- The script asserts A1, A2, A3 and reports the A5 threshold margin. Each
+  assertion prints its own value.
+
+**Interpretation rule, replacing the sentence quoted above:** if the structured
+count is nonzero, the run identifies which of A1-A5 failed. Only when all five
+hold and `max |r' - r|` is within tolerance is an implementation error the
+conclusion. If an assumption failed, the failed assumption is the finding and is
+kept.
+
+This also corrects the caption under `figures/fdia_nullspace.png` in README.md,
+which carried the same overreaching sentence.
+
+Credit: the defect was identified by an external AI review of the public
+repository at commit 6befd98, before any data was fetched.

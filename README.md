@@ -52,7 +52,7 @@ P0a and P0b gate everything downstream. If either anti-vacuity control fails, P1
 
 ![FDIA null space](figures/fdia_nullspace.png)
 
-Why P0b can be stated as an exact integer. Residual-based bad-data detection measures distance to the column space of H, so an injection a = Hc moves the measurement along that space and leaves the residual identical. Structured injections are invisible by construction; unstructured ones are not. A nonzero structured-detection count means the implementation is wrong, not the theory.
+Why P0b can be stated as an exact integer. Residual-based bad-data detection measures distance to the column space of H, so an injection a = Hc moves the measurement along that space and leaves the residual identical. Structured injections are invisible by construction; unstructured ones are not. If the structured count is nonzero, the run identifies which of assumptions A1-A5 failed. See amendment 2.
 
 SVG sources sit beside each PNG.
 
