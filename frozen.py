@@ -93,6 +93,29 @@ P5_TEST_TYPE = "monte_carlo_randomization"   # NOT exact; reference set sampled
 P5_AP = "grouped_tie_invariant"       # ap_grouped.average_precision
 P5_REFERENCE_CONFIG = (60, 0.95)      # (window seconds, threshold quantile)
 
+
+# ------------------------------------------------------------------ eTaPR
+# github.com/saurf4ng/eTaPR at commit af9e7ae.
+#
+# DEFECT IN THE PUBLISHED PACKAGE, recorded not smoothed over: eTaPR does not
+# have one set of defaults, it has three and they disagree.
+#   README CLI documentation      theta_p 0.5   theta_r 0.1    delta 0.0
+#   README worked example         theta_p 0.5   theta_r 0.01
+#   evaluate_w_streams signature  theta_p 0.7   theta_r 0.1    delta 0.0
+#   evaluate_w_ranges signature   no defaults, both required
+# "eTaPR at published defaults" is therefore not a well-defined instruction.
+# Our data is per-tick, so evaluate_w_streams is the natural entry point - and
+# it is the one whose signature (0.7) contradicts the documentation (0.5).
+#
+# Registered: the DOCUMENTED values, passed EXPLICITLY on every call so that
+# no signature default can ever silently apply.
+ETAPR_UPSTREAM_COMMIT = "af9e7ae"
+ETAPR_ENTRY_POINT = "evaluate_w_streams"
+ETAPR_THETA_P = 0.5
+ETAPR_THETA_R = 0.1
+ETAPR_DELTA = 0.0
+ETAPR_PASS_EXPLICITLY = True
+
 # ------------------------------------------------------------------- P0b
 P0B_C_TOL = 1000.0
 P0B_TRIALS = 200
@@ -121,17 +144,17 @@ FROZEN = {
     "P5_COMPARISON": P5_COMPARISON, "P5_CORRECTION": P5_CORRECTION,
     "P5_ALPHA": P5_ALPHA, "P5_TEST_TYPE": P5_TEST_TYPE, "P5_AP": P5_AP,
     "P5_REFERENCE_CONFIG": P5_REFERENCE_CONFIG,
+    "ETAPR_UPSTREAM_COMMIT": ETAPR_UPSTREAM_COMMIT,
+    "ETAPR_ENTRY_POINT": ETAPR_ENTRY_POINT,
+    "ETAPR_THETA_P": ETAPR_THETA_P, "ETAPR_THETA_R": ETAPR_THETA_R,
+    "ETAPR_DELTA": ETAPR_DELTA,
+    "ETAPR_PASS_EXPLICITLY": ETAPR_PASS_EXPLICITLY,
     "P0B_C_TOL": P0B_C_TOL, "P0B_TRIALS": P0B_TRIALS,
     "P0B_UNSTRUCTURED_MIN": P0B_UNSTRUCTURED_MIN,
 }
 
 # Not yet fixed. This module fails while anything remains here.
-PENDING = {
-    "ETAPR_THETA_P": "must be read from github.com/saurf4ng/eTaPR and "
-                     "verified against that implementation on a fixture "
-                     "computed before any HAI score exists",
-    "ETAPR_THETA_R": "same",
-}
+PENDING = {}
 
 
 def digest():
@@ -141,7 +164,7 @@ def digest():
 
 # Recorded after the first clean run and cited by the amendment. Set to None
 # until the freeze is complete; a real value here makes tampering detectable.
-FREEZE_DIGEST = None
+FREEZE_DIGEST = "99d6608c762203f7231f04ee3c9464c60320110a185c0ca97f260eae119ff83b"
 
 
 def selftest():
