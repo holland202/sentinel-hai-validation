@@ -126,29 +126,67 @@ ill-posed.
 
 ---
 
-## 4. THE +1 CORRECTION IN P5
+## 4. THE +1 CORRECTION IN P5 — AND A FROZEN CONSTANT CHANGED
 
-VERIFIED: B. Phipson and G. K. Smyth, "Permutation P-values Should Never Be
-Zero: Calculating Exact P-values When Permutations Are Randomly Drawn,"
-*Statistical Applications in Genetics and Molecular Biology*, vol. 9, no. 1,
-Article 39, 2010. DOI 10.2202/1544-6115.1585. Preprint arXiv:1603.05766.
-Published 31 October 2010; corrected 9 February 2011.
+**OBTAINED AND READ IN FULL**, not merely cited: B. Phipson and G. K. Smyth,
+"Permutation P-values Should Never Be Zero: Calculating Exact P-values When
+Permutations Are Randomly Drawn," *Statistical Applications in Genetics and
+Molecular Biology*, vol. 9, no. 1, Article 39, 2010.
+DOI 10.2202/1544-6115.1585. Preprint arXiv:1603.05766. Published 31 October
+2010; corrected 9 February 2011.
 
-The paper's argument is that resampling should be treated as generating an
-exact discrete null distribution rather than as estimating a tail probability,
-and that the naive uncorrected p-value is understated by roughly `1/m`.
+Their core argument: substituting an unbiased estimator for a p-value does not
+give a test of the same size. Under the null, `b/m` is discrete uniform on
+`0, 1/m, ..., 1`, so the realised type I error rate is `(floor(m*alpha)+1)/(m+1)`,
+which exceeds `alpha` for most small `alpha`. Resampling must be treated as
+generating a discrete null distribution, not as estimating a tail probability.
+That is why the `+1` appears in both numerator and denominator.
 
-**Scope note, so the citation is not overstated.** Phipson and Smyth develop a
-refined estimator for the case where resamples are randomly drawn. The
-registered `P5_CORRECTION` is the simple conservative form
+### Reading the paper changed a registered constant
 
-    p = (1 + #{ b : AP_b >= AP_obs }) / (B + 1)
+Their sections 5 and 6 separate two sampling schemes, and we had registered
+the weaker one:
 
-which is the well-known valid-but-conservative special case, **not** their
-full method. The registered form stays frozen. It is not to be changed because
-a more refined convention exists.
+- **With replacement** — `pu = (b+1)/(m+1)` is valid but **conservative**. The
+  exact value `pe` is strictly smaller, because the original configuration may
+  itself be drawn among the `m` resamples.
+- **Without replacement** — `pu = (b+1)/(m+1)` **is** the exact p-value, and
+  gives strictly more statistical power for any `m <= mt`.
 
----
+They call sampling without replacement the superior approach, and report that
+it is seldom used — they had never seen it in their own literature — because
+drawing distinct *permutations* without replacement is a hard combinatorial
+programming problem.
+
+**That difficulty does not apply to a circular shift.** The admissible set is
+the integer range `1 .. N-1`, so drawing `m` distinct shifts without
+replacement is a single call. The superior scheme is therefore adopted at zero
+implementation cost.
+
+`P5_SHIFT_REPLACEMENT` changed `True -> False` and `P5_TEST_TYPE` changed
+`monte_carlo_randomization -> randomization_without_replacement` before any
+detector run. The freeze digest moved `451060ef -> 6005fb60`.
+
+**Consequence for how P5 may be described.** Under the registered scheme the
+p-value is exact, not merely valid. An earlier draft of this repository
+instructed that P5 must never be called exact. That instruction was correct
+for sampling *with* replacement and is wrong for the scheme now registered.
+
+### Conditions the exactness rests on, registered not assumed
+
+Their section 5 derivation assumes each drawn resample yields a distinct test
+statistic, different from the original. For circular shifts on HAI: `k = 0` is
+excluded by construction, and `mt = N - 1 = 291,599` for `test1` against
+`m = 999`, so `m << mt`. Distinct shifts are expected to give distinct AP
+values, but that is an assumption about the data, not a theorem.
+`P5_DISTINCT_STATISTIC_CHECK` is registered: the implementation must assert
+that the `m` draws produce `m` distinct AP values and report any collisions.
+
+### One more caution the paper supplies
+
+Phipson and Smyth note that permutation assumes the items being permuted are
+statistically independent. That is the same condition our own measurement
+found violated by iid permutation on autocorrelated ICS data — see section 5.
 
 ## 5. EXCHANGEABILITY, AND WHY IT IS NOT ASSUMED
 

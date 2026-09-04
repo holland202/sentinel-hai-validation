@@ -85,11 +85,26 @@ P5_NULL = "circular_shift"
 P5_B = 999
 P5_SEED = 20260903
 P5_SHIFT_LOW = 1                      # k = 0 excluded
-P5_SHIFT_REPLACEMENT = True           # sampled with replacement
+P5_SHIFT_REPLACEMENT = False          # WITHOUT replacement - see below
 P5_COMPARISON = ">="                  # AP_b >= AP_obs counts toward p
 P5_CORRECTION = "plus_one_numerator_and_denominator"
 P5_ALPHA = 0.01
-P5_TEST_TYPE = "monte_carlo_randomization"   # NOT exact; reference set sampled
+P5_TEST_TYPE = "randomization_without_replacement"
+# Phipson & Smyth (2010), SAGMB 9(1) Art.39, read in full. Their sections 5
+# and 6 distinguish the two sampling schemes:
+#   WITH replacement    -> pu = (b+1)/(m+1) is VALID but CONSERVATIVE; the
+#                          exact value pe is strictly smaller, because the
+#                          original configuration may be drawn among the m.
+#   WITHOUT replacement -> pu = (b+1)/(m+1) IS the exact p-value, and gives
+#                          strictly more power for any m <= mt.
+# They call sampling without replacement the superior approach but report that
+# it is seldom used because drawing distinct PERMUTATIONS is a hard
+# combinatorial problem. That difficulty does not apply here: the admissible
+# set for a circular shift is the integer range 1..N-1, so drawing m distinct
+# shifts is a single call. The superior scheme is therefore adopted at zero
+# cost, and the registered p-value is exact rather than conservative.
+# mt = N-1 = 291,599 for test1, against m = 999, so m << mt.
+P5_DISTINCT_STATISTIC_CHECK = True    # assert the m draws give m distinct AP
 P5_AP = "grouped_tie_invariant"       # ap_grouped.average_precision
 P5_REFERENCE_CONFIG = (60, 0.95)      # (window seconds, threshold quantile)
 
@@ -177,7 +192,7 @@ def digest():
 
 # Recorded after the first clean run and cited by the amendment. Set to None
 # until the freeze is complete; a real value here makes tampering detectable.
-FREEZE_DIGEST = "451060ef342e9662c5f1d512335d1d94b2692ddadec06519bc5942e872a63355"
+FREEZE_DIGEST = "6005fb60e473dfdf22b165b7b6375b52a0e5a055c57cc2fea8a013074a7bbbf4"
 
 
 def selftest():
