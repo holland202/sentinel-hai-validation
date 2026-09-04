@@ -1,5 +1,51 @@
 {
+  "cascade_ranges": {
+    "anomalies": [
+      [
+        6,
+        16
+      ],
+      [
+        54,
+        78
+      ],
+      [
+        89,
+        152
+      ]
+    ],
+    "predictions": [
+      [
+        33,
+        56
+      ],
+      [
+        78,
+        105
+      ],
+      [
+        128,
+        165
+      ]
+    ]
+  },
   "cases": {
+    "cascade_prune": {
+      "_note": "requires 3 pruning rounds; added after sabotage showed the original seven cases could not distinguish a fixed-point loop from a single pass",
+      "eTaP": 0.572432562312,
+      "eTaPd": 0.700457926946,
+      "eTaPp": 0.444407197678,
+      "eTaR": 0.276041666667,
+      "eTaRd": 0.333333333333,
+      "eTaRp": 0.21875,
+      "f1": 0.372469152646,
+      "gt_positive": 100,
+      "n_gt_blocks": 3,
+      "n_pred_blocks": 3,
+      "precision": 0.511111111111,
+      "pred_positive": 90,
+      "recall": 0.46
+    },
     "late_short": {
       "eTaP": 0.25,
       "eTaPd": 0.333333333333,
@@ -98,8 +144,9 @@
   "entry_point": "evaluate_w_streams",
   "etapr_commit": "af9e7ae",
   "n": 600,
+  "n_cascade": 200,
   "notes": {
-    "one_long_behaviour_DIAGNOSED": "NOT a bug. _pruning() is an iterative fixed-point loop: any prediction whose overlap ratio is below theta_p and nonzero has its whole column zeroed, and any anomaly below theta_r has its row zeroed, repeating until stable. one_long spans 600 ticks overlapping 200 anomaly ticks, ratio 0.333 < theta_p 0.5, so the prediction is deleted entirely and every anomaly score cascades to zero. Intentional anti-cheat behaviour. CONSEQUENCE for this experiment: at theta_p 0.5 any alarm block less than 50 percent overlapping a real attack is discarded outright rather than scored partially, and a sliding-window detector produces broad smeared alarms by construction.",
+    "one_long_behaviour_DIAGNOSED": "NOT a bug. pruning fixed point.",
     "provenance": "values produced by github.com/saurf4ng/eTaPR at af9e7ae, theta passed explicitly, before any HAI score existed",
     "published_defect_1": "evaluate_w_streams raises AttributeError when predictions are all zero. Cause: _etar_p() returns the scalar 0.0 on the no-prediction guard while eTaR_p() calls .mean() on it. Recorded in the none case below."
   },
