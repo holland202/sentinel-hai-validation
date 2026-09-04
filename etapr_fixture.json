@@ -99,9 +99,9 @@
   "etapr_commit": "af9e7ae",
   "n": 600,
   "notes": {
+    "one_long_behaviour_DIAGNOSED": "NOT a bug. _pruning() is an iterative fixed-point loop: any prediction whose overlap ratio is below theta_p and nonzero has its whole column zeroed, and any anomaly below theta_r has its row zeroed, repeating until stable. one_long spans 600 ticks overlapping 200 anomaly ticks, ratio 0.333 < theta_p 0.5, so the prediction is deleted entirely and every anomaly score cascades to zero. Intentional anti-cheat behaviour. CONSEQUENCE for this experiment: at theta_p 0.5 any alarm block less than 50 percent overlapping a real attack is discarded outright rather than scored partially, and a sliding-window detector produces broad smeared alarms by construction.",
     "provenance": "values produced by github.com/saurf4ng/eTaPR at af9e7ae, theta passed explicitly, before any HAI score existed",
-    "published_defect_1": "evaluate_w_streams raises AttributeError when predictions are all zero. Cause: _etar_p() returns the scalar 0.0 on the no-prediction guard while eTaR_p() calls .mean() on it. Recorded in the none case below.",
-    "published_defect_2_UNDIAGNOSED": "the one_long case (prediction covers the whole stream) returns eTaR 0.0 while point-wise recall is 1.0. Possibly intentional anti-cheat behaviour, possibly a second bug. NOT diagnosed here."
+    "published_defect_1": "evaluate_w_streams raises AttributeError when predictions are all zero. Cause: _etar_p() returns the scalar 0.0 on the no-prediction guard while eTaR_p() calls .mean() on it. Recorded in the none case below."
   },
   "theta_p": 0.5,
   "theta_r": 0.1
