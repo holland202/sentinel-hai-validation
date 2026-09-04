@@ -116,6 +116,17 @@ ETAPR_THETA_R = 0.1
 ETAPR_DELTA = 0.0
 ETAPR_PASS_EXPLICITLY = True
 
+
+# A configuration that predicts nothing crashes the published eTaPR:
+# _etar_p() returns the scalar 0.0 on its no-prediction guard while eTaR_p()
+# calls .mean() on it. At threshold quantile 0.99 a sweep configuration may
+# well produce zero positive predictions, so the score such a configuration
+# receives must be registered BEFORE the run, not chosen when the sweep dies.
+# Registered as 0.0 rather than dropping the configuration: dropping one would
+# silently shrink the enumerated grid that P1 depends on.
+EMPTY_PREDICTION_ETAPR = 0.0
+EMPTY_PREDICTION_POLICY = "score_zero_keep_config_in_grid"
+
 # ------------------------------------------------------------------- P0b
 P0B_C_TOL = 1000.0
 P0B_TRIALS = 200
@@ -149,6 +160,8 @@ FROZEN = {
     "ETAPR_THETA_P": ETAPR_THETA_P, "ETAPR_THETA_R": ETAPR_THETA_R,
     "ETAPR_DELTA": ETAPR_DELTA,
     "ETAPR_PASS_EXPLICITLY": ETAPR_PASS_EXPLICITLY,
+    "EMPTY_PREDICTION_ETAPR": EMPTY_PREDICTION_ETAPR,
+    "EMPTY_PREDICTION_POLICY": EMPTY_PREDICTION_POLICY,
     "P0B_C_TOL": P0B_C_TOL, "P0B_TRIALS": P0B_TRIALS,
     "P0B_UNSTRUCTURED_MIN": P0B_UNSTRUCTURED_MIN,
 }
@@ -164,7 +177,7 @@ def digest():
 
 # Recorded after the first clean run and cited by the amendment. Set to None
 # until the freeze is complete; a real value here makes tampering detectable.
-FREEZE_DIGEST = "99d6608c762203f7231f04ee3c9464c60320110a185c0ca97f260eae119ff83b"
+FREEZE_DIGEST = "451060ef342e9662c5f1d512335d1d94b2692ddadec06519bc5942e872a63355"
 
 
 def selftest():
