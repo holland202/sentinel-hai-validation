@@ -1,0 +1,113 @@
+name: veritas gate
+
+# Tier 1 runs on every push and pull request. It needs no dataset and
+# finishes in seconds.
+# Tier 2 downloads ~113 MB of HAI and is manual or weekly, so ordinary CI
+# stays fast.
+#
+# The point of this workflow is the distinction between "the repository
+# CONTAINS a verifier" and "the repository's verifier PASSES". Every step
+# below executes something and asserts on its exit status. A step that only
+# checked a file existed would prove the former and nothing else.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      run_tier2:
+        description: "Also fetch HAI and run the dataset gates"
+        type: boolean
+        default: false
+
+jobs:
+  tier1:
+    name: Tier 1 - provenance and instruments (no dataset)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record the exact commit under test
+        run: echo "commit ${{ github.sha }}"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history: G1 checks ancestry
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install numpy
+        run: python -m pip install --quiet numpy
+
+      # G1. Registration precedes the run, amendments are append-only, no
+      # protocol script is unpublished, no detector ran before the freeze.
+      # These cannot be faked by passing tests.
+      - name: G1 provenance
+        run: python gate_provenance.py
+
+      # G5-G8, G10. The freeze recomputes its own digest and exits 1 on any
+      # mismatch, so a constant cannot be frozen in prose and different in code.
+      - name: G7 freeze sealed
+        run: python frozen.py
+
+      # The metric. Includes T4, which proves the selftest can return non-null
+      # by showing the withdrawn implementation failing the same invariant.
+      - name: AP tie-invariance selftest
+        run: python ap_grouped.py
+
+      # G11. P0b, three-part, on synthetic IEEE 14-bus data only.
+      - name: G11 P0b residual-invariance control
+        run: python fdia_control_v2.py
+
+      # G9. Independent eTaPR against a fixture generated from the published
+      # package BEFORE the independent implementation was written.
+      - name: G9 eTaPR agreement
+        run: python etapr_independent.py
+
+      # The historical failure must remain a failure. If fdia_control.py ever
+      # starts passing, someone edited a kept refutation.
+      - name: kept refutation still fails
+        run: |
+          if python fdia_control.py; then
+            echo "fdia_control.py PASSED - a kept failure was altered"
+            exit 1
+          else
+            echo "fdia_control.py still exits nonzero, as registered"
+          fi
+
+  tier2:
+    name: Tier 2 - dataset gates (downloads HAI)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || inputs.run_tier2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install numpy
+        run: python -m pip install --quiet numpy
+
+      # G2. Five files against pinned sha256 at a pinned upstream commit.
+      - name: G2 fetch and hash-verify HAI 20.07
+        run: bash fetch_hai.sh
+
+      # G3, G4, and the external check: measured attack episodes against the
+      # 38 scenarios published by the dataset authors.
+      - name: G3 G4 schema, cleanliness, published-episode cross-check
+        run: python verify_hai.py
+
+      # Anti-vacuity: the dataset gate must be able to fail.
+      - name: verify_hai can return non-null
+        run: |
+          if python verify_hai.py --sabotage; then
+            echo "sabotage PASSED - the dataset gate cannot fail"
+            exit 1
+          else
+            echo "sabotage correctly exits nonzero"
+          fi
