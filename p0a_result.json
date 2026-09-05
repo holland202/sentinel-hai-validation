@@ -1,0 +1,17 @@
+{
+  "quick": false,
+  "window": 60,
+  "alpha": 0.1,
+  "n_calibration": 61861,
+  "n_heldout": 61861,
+  "threshold": 28.84513959405905,
+  "breach_rate_heldout": 0.042401513069623836,
+  "breach_rate_in_sample": 0.0999822181988652,
+  "p0a_interval": [
+    0.05,
+    0.2
+  ],
+  "p0a_pass": false,
+  "channels": 59,
+  "fit_rows": 185760
+}
