@@ -35,6 +35,14 @@ CODE_FILES = ["frozen.py", "ap_grouped.py", "etapr_independent.py",
               "verify_hai.py", "fetch_hai.sh", "sentinel.py"]
 PREREG_COMMIT = "e48cdacfcc62eec3ad2681f8308015918be95092"
 
+# This tool writes its output into the tree it inspects, so its own output
+# path is excluded from the cleanliness check. Without the exclusion the tool
+# creates the dirty state that causes its own refusal - found on first use.
+# The exclusion is RECORDED in the manifest, so a reader who later sees
+# working_tree_clean true alongside an uncommitted file knows why.
+# Nothing else is exempt. Any other uncommitted change still refuses.
+SELF_OUTPUT = "run_manifest.json"
+
 
 def _git(*a):
     r = subprocess.run(["git"] + list(a), capture_output=True, text=True)
@@ -52,7 +60,9 @@ def _sha(path):
 
 
 def manifest():
-    dirty = _git("status", "--porcelain")
+    raw = (_git("status", "--porcelain") or "").splitlines()
+    excluded = [l for l in raw if l.split(maxsplit=1)[-1:] == [SELF_OUTPUT]]
+    dirty = [l for l in raw if l not in excluded]
     return {
         "generated_by": "run_manifest.py",
         "repository": {
@@ -63,8 +73,11 @@ def manifest():
             "prereg_is_ancestor": subprocess.run(
                 ["git", "merge-base", "--is-ancestor", PREREG_COMMIT, "HEAD"]
             ).returncode == 0,
-            "working_tree_clean": dirty == "",
-            "uncommitted": [l for l in (dirty or "").splitlines()],
+            "working_tree_clean": dirty == [],
+            "uncommitted": dirty,
+            "manifest_output": SELF_OUTPUT,
+            "manifest_output_excluded": excluded != [],
+            "excluded_entries": excluded,
         },
         "freeze": {
             "digest_sealed": frozen.FREEZE_DIGEST,
