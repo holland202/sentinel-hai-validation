@@ -17,6 +17,7 @@ Usage:
 Import `manifest()` to embed the same record inside a result file.
 """
 
+import argparse
 import hashlib
 import json
 import os
@@ -49,6 +50,21 @@ def _git(*a):
     return r.stdout.strip() if r.returncode == 0 else None
 
 
+def _resolve(rev):
+    """Full SHA of rev, or None if git cannot resolve it. An argument that
+    cannot be verified is a typed assertion, which is what this tool exists
+    to eliminate."""
+    r = subprocess.run(["git", "rev-parse", "--verify", f"{rev}^{{commit}}"],
+                       capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def _sha_at(rev, path):
+    """sha256 of a file AS COMMITTED at rev, not as it sits on disk."""
+    r = subprocess.run(["git", "show", f"{rev}:{path}"], capture_output=True)
+    return hashlib.sha256(r.stdout).hexdigest() if r.returncode == 0 else None
+
+
 def _sha(path):
     if not os.path.exists(path):
         return None
@@ -59,12 +75,38 @@ def _sha(path):
     return h.hexdigest()
 
 
-def manifest():
+def manifest(experiment_rev=None):
+    """experiment_rev: the commit at which the experiment RAN.
+
+    "This manifest was generated from this repository state" and "this
+    experiment was executed at this repository state" are different claims.
+    Recorded separately, never collapsed. HEAD is never substituted for a
+    supplied experiment commit."""
+    head_full = _resolve("HEAD")
+    exp_full = _resolve(experiment_rev) if experiment_rev else None
     raw = (_git("status", "--porcelain") or "").splitlines()
     excluded = [l for l in raw if l.split(maxsplit=1)[-1:] == [SELF_OUTPUT]]
     dirty = [l for l in raw if l not in excluded]
     return {
         "generated_by": "run_manifest.py",
+        "provenance": {
+            "experiment_commit": exp_full,
+            "experiment_commit_supplied": experiment_rev,
+            "manifest_generation_commit": head_full,
+            "experiment_is_ancestor_of_manifest":
+                (subprocess.run(["git", "merge-base", "--is-ancestor",
+                                 exp_full, head_full]).returncode == 0)
+                if exp_full else None,
+            "experiment_equals_manifest_commit":
+                (exp_full == head_full) if exp_full else None,
+            "infrastructure_baseline": _resolve("infrastructure-baseline"),
+            "freeze_digest": frozen.FREEZE_DIGEST,
+            "experiment_artefact": "p0a_result.json",
+            "experiment_artefact_sha256_at_experiment_commit":
+                _sha_at(exp_full, "p0a_result.json") if exp_full else None,
+            "note": "manifest generation and experiment execution are "
+                    "different events, recorded separately and never merged",
+        },
         "repository": {
             "head": _git("rev-parse", "HEAD"),
             "head_short": _git("rev-parse", "--short", "HEAD"),
@@ -104,11 +146,30 @@ def manifest():
 
 
 def main():
-    m = manifest()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--experiment-commit", default=None,
+                    help="commit at which the experiment RAN; must resolve")
+    a = ap.parse_args()
+    if a.experiment_commit and _resolve(a.experiment_commit) is None:
+        print(f"MANIFEST REFUSED:\n  --experiment-commit "
+              f"{a.experiment_commit!r} does not resolve in this repository",
+              file=sys.stderr)
+        return 1
+    m = manifest(a.experiment_commit)
     print(json.dumps(m, indent=2, sort_keys=True, default=list))
     r = m["repository"]
     f = m["freeze"]
+    pv = m["provenance"]
     problems = []
+    if pv["experiment_commit"]:
+        if pv["experiment_is_ancestor_of_manifest"] is False:
+            problems.append(
+                f"experiment commit {pv['experiment_commit'][:8]} is NOT an "
+                f"ancestor of the manifest commit - the chronology is not "
+                f"what this manifest would otherwise imply")
+        if pv["experiment_artefact_sha256_at_experiment_commit"] is None:
+            problems.append(
+                f"p0a_result.json absent at {pv['experiment_commit'][:8]}")
     if not r["prereg_is_ancestor"]:
         problems.append("prereg commit is not an ancestor of HEAD")
     if not f["sealed_matches_computed"]:
