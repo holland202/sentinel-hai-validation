@@ -38,6 +38,8 @@ REQUIRED_TRACKED = [
     "fetch_hai.sh", "verify_hai.py", "frozen.py",
     "ap_grouped.py", "etapr_independent.py", "etapr_fixture.json",
     "fdia_control.py", "fdia_control_v2.py",
+    "gate_provenance.py", "evaluator_experiments.py",
+    ".github/workflows/veritas_gate.yml",
 ]
 
 # Anything matching these in a commit BEFORE the freeze would mean a detector

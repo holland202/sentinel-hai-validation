@@ -61,6 +61,11 @@ jobs:
       - name: G11 P0b residual-invariance control
         run: python fdia_control_v2.py
 
+      # E1, E2, E13, E14. Evaluator characterisation. Exploratory, not
+      # registered, but it must keep passing or the evaluator changed.
+      - name: evaluator experiments E1 E2 E13 E14
+        run: python evaluator_experiments.py
+
       # G9. Independent eTaPR against a fixture generated from the published
       # package BEFORE the independent implementation was written.
       - name: G9 eTaPR agreement
