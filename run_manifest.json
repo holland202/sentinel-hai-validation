@@ -1,0 +1,132 @@
+{
+  "code_sha256": {
+    "ap_grouped.py": "5baca24e62141926d3f3265995fb0f1a26de8daa461d08a76a4315d5996fb46e",
+    "etapr_independent.py": "f196da6f5ffbc817ceba05d94c5b3d2ce25376e7670acfc80c5a91333f77ffd3",
+    "fetch_hai.sh": "6002784d49e39b6aac47c3eec10b3d8ea644faf9380af7e30bb097afa325173d",
+    "frozen.py": "ed03a125bbb84735cec1fd4dd6c80e608bce03a86edd915dd8bf996b168a3fb6",
+    "sentinel.py": "1e5d57a62fb920e9aba348ab1e3a332377c708eba375dbc38c0236ce30558f19",
+    "verify_hai.py": "efc9291152ecbf53d5efa5ed8f5941e98f0810b0c2cadf976829901f3ef8b164"
+  },
+  "configuration": {
+    "CALIBRATION_FRACTION": 0.4,
+    "CONFORMAL_ALPHA": 0.1,
+    "DATASET": "HAI 20.07",
+    "DELIMITER": ";",
+    "DISAGREEMENT_CRITERION": "argmax_F1 != argmax_eTaPR",
+    "EMPTY_PREDICTION_ETAPR": 0.0,
+    "EMPTY_PREDICTION_POLICY": "score_zero_keep_config_in_grid",
+    "ETAPR_DELTA": 0.0,
+    "ETAPR_ENTRY_POINT": "evaluate_w_streams",
+    "ETAPR_PASS_EXPLICITLY": true,
+    "ETAPR_THETA_P": 0.5,
+    "ETAPR_THETA_R": 0.1,
+    "ETAPR_UPSTREAM_COMMIT": "af9e7ae",
+    "EVAL_FILE": "test1",
+    "EXCLUDED_COLUMNS": [
+      "time",
+      "attack",
+      "attack_P1",
+      "attack_P2",
+      "attack_P3"
+    ],
+    "EXCLUDED_FILE": "train2",
+    "FIT_FILE": "train1",
+    "FIT_FRACTION": 0.6,
+    "JSD_BINS": 64,
+    "N_COLUMNS": 64,
+    "P0B_C_TOL": 1000.0,
+    "P0B_TRIALS": 200,
+    "P0B_UNSTRUCTURED_MIN": 190,
+    "P5_ALPHA": 0.01,
+    "P5_AP": "grouped_tie_invariant",
+    "P5_B": 999,
+    "P5_COMPARISON": ">=",
+    "P5_CORRECTION": "plus_one_numerator_and_denominator",
+    "P5_NULL": "circular_shift",
+    "P5_REFERENCE_CONFIG": [
+      60,
+      0.95
+    ],
+    "P5_SEED": 20260903,
+    "P5_SHIFT_LOW": 1,
+    "P5_SHIFT_REPLACEMENT": false,
+    "P5_TEST_TYPE": "randomization_without_replacement",
+    "PRIMARY_LABEL": "attack",
+    "QUANTILE_CONVENTION": "order_statistic_ceil_n_plus_1",
+    "RANKING_RULE": "argmax_over_enumerated_grid",
+    "REPLICATION_FILE": "test2",
+    "RIDGE_LAMBDA": 1.0,
+    "RNG": "numpy.random.default_rng",
+    "SECONDARY_LABELS": [
+      "attack_P1",
+      "attack_P2",
+      "attack_P3"
+    ],
+    "SEED": 20260903,
+    "SHUFFLE": false,
+    "SPLIT_STRATEGY": "contiguous_temporal",
+    "THRESHOLD_QUANTILE_GRID": [
+      0.9,
+      0.95,
+      0.99
+    ],
+    "UPSTREAM_COMMIT": "2a814cebc9a66b06c9e5cd545e2d72e65d383737",
+    "WARMUP_POLICY": "exclude_first_max_window_ticks_from_scoring",
+    "WINDOW_GRID_SECONDS": [
+      30,
+      60,
+      120
+    ]
+  },
+  "dataset": {
+    "name": "HAI 20.07",
+    "sha256": {
+      "hai_dataset_technical_details.pdf": "0668345c4e80331b918fe17c81f8f363b13bd22886831d286e761bc62b71a556",
+      "test1.csv.gz": "68cc18af44efcd756e9eaaa81790855836e8aee3f2ce9c4d9dd95a0ada36c2e4",
+      "test2.csv.gz": "427841d8240d5fa557fb28ed58da21bb93d0a3c2b30e43b82ab2d816330185e2",
+      "train1.csv.gz": "376e8288a5e3cf69bc5c506f75d6fb9cebb30ff43326c60ed675ccea37700844",
+      "train2.csv.gz": "30caafaeba9736238fe746a780c0baf3aa71ee7bcf494fb3daf721128ad7fdde"
+    },
+    "upstream_commit": "2a814cebc9a66b06c9e5cd545e2d72e65d383737"
+  },
+  "environment": {
+    "machine": "aarch64",
+    "numpy": "2.4.4",
+    "platform": "Android-16-aarch64-64bit-ELF",
+    "python": "3.14.6"
+  },
+  "freeze": {
+    "digest_computed": "6005fb60e473dfdf22b165b7b6375b52a0e5a055c57cc2fea8a013074a7bbbf4",
+    "digest_sealed": "6005fb60e473dfdf22b165b7b6375b52a0e5a055c57cc2fea8a013074a7bbbf4",
+    "n_constants": 48,
+    "pending": [],
+    "sealed_matches_computed": true
+  },
+  "generated_by": "run_manifest.py",
+  "provenance": {
+    "experiment_artefact": "p0a_result.json",
+    "experiment_artefact_sha256_at_experiment_commit": "0fd90b6145625affaa802fa64aba2ca84e9a3ea74cb7a29616560cf8c16bee05",
+    "experiment_commit": "c96bc30e754a57709308263de33f8a64700c4297",
+    "experiment_commit_supplied": "c96bc30",
+    "experiment_equals_manifest_commit": false,
+    "experiment_is_ancestor_of_manifest": true,
+    "freeze_digest": "6005fb60e473dfdf22b165b7b6375b52a0e5a055c57cc2fea8a013074a7bbbf4",
+    "infrastructure_baseline": "4840df6ce6015c58ac138642c8d45bd03e87eea3",
+    "manifest_generation_commit": "2765b624e69532a46105adb2aba895a230af752c",
+    "note": "manifest generation and experiment execution are different events, recorded separately and never merged"
+  },
+  "repository": {
+    "describe": "infrastructure-baseline-3-g2765b62",
+    "excluded_entries": [
+      "?? run_manifest.json"
+    ],
+    "head": "2765b624e69532a46105adb2aba895a230af752c",
+    "head_short": "2765b62",
+    "manifest_output": "run_manifest.json",
+    "manifest_output_excluded": true,
+    "prereg_commit": "e48cdacfcc62eec3ad2681f8308015918be95092",
+    "prereg_is_ancestor": true,
+    "uncommitted": [],
+    "working_tree_clean": true
+  }
+}
