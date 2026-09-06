@@ -1,7 +1,24 @@
-# FOURTH PASS — PROPOSED TEXTS, NOT YET APPLIED
+# FOURTH PASS — PROPOSED TEXTS
 
-Prepared 2026-09-03. **`PREREG.md` is not modified by this document.** These
-are proposed texts for review. No HAI detector has run.
+> **SUPERSEDED. Read this notice first.**
+>
+> When written, this document was a set of proposals and its header said so.
+> Both statements below it are now FALSE and are left in place because the
+> document is part of the record, not because they are true:
+>
+> - *"`PREREG.md` is not modified by this document"* — Amendments 3 and 4
+>   were applied to `PREREG.md` at commit `4296567`. The registered text is
+>   there; this file is the draft that preceded it.
+> - *"No HAI detector has run"* — `sentinel.py` ran at commit `c96bc30`.
+>   **P0a FAILED**, `test1` was never read, P1 and P3 are VOID.
+>
+> The applied amendments differ from these drafts in one respect worth
+> knowing: P6, the TIME_NULL control, was added during review and is not in
+> the text below. Read `PREREG.md` for what is registered. Read this only for
+> what was proposed.
+
+Prepared 2026-09-03. These were proposed texts for review at the time of
+writing.
 
 New finding this pass, and a second one carried from the device run:
 

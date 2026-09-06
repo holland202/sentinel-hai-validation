@@ -107,6 +107,28 @@ jobs:
       - name: G3 G4 schema, cleanliness, published-episode cross-check
         run: python verify_hai.py
 
+      # The detector must still FAIL P0a and must still refuse to open test1.
+      # sentinel.py exits 1 on a P0a failure, so a zero exit here would mean
+      # the registered gate started passing without an amendment.
+      - name: P0a still fails and test1 stays sealed
+        run: |
+          if python sentinel.py --p0a; then
+            echo "sentinel.py exited 0 - P0a now PASSES. This is a registered"
+            echo "result change and must not happen silently."
+            exit 1
+          fi
+          if [ -f sentinel_scores_test1.npy ]; then
+            echo "a test1 artefact exists - the evaluation set was read"
+            exit 1
+          fi
+          echo "P0a still fails; no test1 artefact"
+
+      # The published result must still reproduce. p0a_characterization.py
+      # refuses to report anything unless it recomputes the committed
+      # breach rate exactly.
+      - name: the committed result still reproduces
+        run: python p0a_characterization.py
+
       # Anti-vacuity: the dataset gate must be able to fail.
       - name: verify_hai can return non-null
         run: |

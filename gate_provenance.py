@@ -40,6 +40,15 @@ REQUIRED_TRACKED = [
     "fdia_control.py", "fdia_control_v2.py",
     "gate_provenance.py", "evaluator_experiments.py",
     ".github/workflows/veritas_gate.yml",
+    # the detector and the analysis of its result
+    "sentinel.py", "p0a_characterization.py", "run_manifest.py",
+    # the result artefacts themselves
+    "p0a_result.json", "p0a_score_characterization.json", "run_manifest.json",
+    # the standalone defect report and its reproducer
+    "ETAPR_DEFECT_REPORT.md", "etapr_reproduce.py",
+    # the audit record
+    "PRE_RUN_AUDIT.md", "SECOND_PASS_AND_GATE.md", "THIRD_PASS_P0C_AUDIT.md",
+    "FOURTH_PASS_PROPOSED_TEXTS.md", "REFERENCES.md",
 ]
 
 # Anything matching these in a commit BEFORE the freeze would mean a detector
@@ -145,6 +154,17 @@ def main():
     g.check("10 the withdrawn AP is retained as an anti-vacuity control",
             "_ap_by_index" in ap and "WITHDRAWN" in ap,
             "index-order AP kept so the selftest can prove it can fail")
+
+    # --- 12. the committed result is unaltered ------------------------------
+    import json
+    try:
+        res = json.loads(git("show", "HEAD:p0a_result.json").stdout)
+        g.check("12 the committed P0a result still records a FAILURE",
+                res.get("p0a_pass") is False,
+                f"breach_rate_heldout {res.get('breach_rate_heldout')} vs "
+                f"interval {res.get('p0a_interval')}")
+    except Exception as exc:
+        g.check("12 the committed P0a result is readable", False, str(exc))
 
     print()
     if g.failures:
