@@ -1,58 +1,163 @@
 # sentinel-hai-validation
 
-**Status: NOT RUN.** No data fetched, no detector executed, no results.
+**A preregistered evaluation of anomaly detection on the HAI industrial
+control system benchmark.**
 
-Transfer of two anomaly detectors — SENTINEL (Jensen–Shannon divergence over a
-sliding window) and VERA (ridge dynamics with split conformal prediction) — from
-the BATADAL water-ICS benchmark to the **HAI** power-generation ICS benchmark.
+**Result: P0a FAILED.** The detector did not satisfy the registered
+precondition required to interpret any attack-detection measurement.
+Therefore `test1` was never read, P1 and P3 are VOID, and **no
+attack-detection result is claimed.**
 
-Predictions were registered before any data was fetched. See
-[PREREG.md](PREREG.md), which is the first commit in this repository.
+The useful result here is not a better score. It is knowing when a score is
+not justified.
 
-## Why HAI
+---
 
-HAI is collected from an ICS testbed augmented with a hardware-in-the-loop
-simulator emulating steam-turbine power generation and pumped-storage
-hydropower. It has the same shape as BATADAL: continuous time series, training
-data containing only normal operation, test data with labelled attacks, and an
-official time-aware metric (eTaPR) with published contest results.
+## Defects found in the benchmark's recommended metric
 
-HAI is one testbed containing a simulated grid model. It is not the power grid,
-and nothing here generalises to an operating utility.
+While validating the scoring path, three reproducible failures were found in
+[eTaPR](https://github.com/saurf4ng/eTaPR), the metric the HAI dataset authors
+recommend:
 
-## What is in this repository
+| Input | Exception | Location |
+|---|---|---|
+| Detector predicts nothing | `AttributeError: 'float' object has no attribute 'mean'` | `etapr.py:113` |
+| Segment contains no attack | `ZeroDivisionError` | `etapr.py:101` |
+| Both empty | `ZeroDivisionError` | `etapr.py:101` |
 
-Right now: the prereg, a licence, and this file. That is deliberate. The data
-fetch, the detectors, the independent eTaPR implementation and the
-state-estimation control land in later commits, so that the registration is
-provably earlier than the run.
+Separately, **"eTaPR at published defaults" has three different answers.** The
+README documents `theta_p = 0.5`; the worked example uses a different
+`theta_r`; the signature of `evaluate_w_streams` declares `0.7`. That
+threshold decides whether a prediction block is *deleted entirely* by the
+pruning loop rather than down-weighted, so the settings are not close.
 
-## Prior work
+**No patch is proposed, and the report says why** — two attempts each moved
+the failure somewhere new.
 
-- BATADAL transfer and the metric argument this replicates:
-  [sentinel-batadal-validation](https://github.com/holland202/sentinel-batadal-validation)
-- HAI dataset: https://github.com/icsdataset/hai — CC BY 4.0, the Affiliated
-  Institute of ETRI. Not redistributed here; a fetch script will pull it.
-- eTaPR is prior work by the HAI authors. No novelty is claimed for the
-  reimplementation.
+→ **[Read the report](ETAPR_DEFECT_REPORT.md)** ·
+**[Run the reproducer](etapr_reproduce.py)** (needs only numpy and a clone of
+the package)
+
+---
+
+## The result
+
+`sentinel.py`, JSD over a sliding window, every constant imported from a
+sealed freeze. Fit on `train1[:60%]`, calibrate on the next 20%, measure P0a
+on the final 20% — held out from the quantile, not merely from the fit.
+
+```
+P0a breach rate   0.042402   on 61,861 clean held-out ticks
+registered interval          [0.05, 0.2]  at alpha = 0.10
+                             FAIL
+```
+
+P0a is the anti-vacuity gate: a detector that alarms on data containing no
+attacks cannot be read as detecting attacks anywhere else. `sentinel.py` will
+not open `test1` until P0a passes, so the evaluation set was not touched
+before the gate that licenses touching it.
+
+**Then the explanation turned out to be wrong.** The commit recording the
+failure claimed held-out scores were systematically *lower*. Measurement
+refuted that — the held-out mean is **higher** (25.2869 vs 25.1206) while the
+standard deviation **falls** (1.9876 vs 2.6027). A tail threshold on a
+narrower distribution catches fewer points even as the centre rises. It is a
+variance change, not the drift story. The original claim stays in the history.
+
+→ [`p0a_result.json`](p0a_result.json) ·
+[`p0a_score_characterization.json`](p0a_score_characterization.json) ·
+[`p0a_characterization.py`](p0a_characterization.py)
+
+## What passed
+
+**P0b PASSES.** A residual-invariance control on IEEE 14-bus DC state
+estimation: 200 structured injections `a = Hc` produce zero change in the
+detection indicator, and 200 matched unstructured injections are detected
+200/200. Both bounds are required — a detector that never fires passes the
+first and is caught only by the second.
+
+The construction is prior work (Liu, Ning & Reiter, CCS '09). What is
+registered here is the two-sided predicate around it.
+
+## Reproduce
+
+```bash
+git clone https://github.com/holland202/sentinel-hai-validation
+cd sentinel-hai-validation
+python3 gate_provenance.py       # 11 provenance checks, no data needed
+python3 frozen.py                # freeze digest, exits 1 if a constant moved
+python3 fdia_control_v2.py       # P0b
+python3 etapr_independent.py     # metric agreement against a pre-committed fixture
+bash fetch_hai.sh                # ~113 MB, five sha256-pinned files
+python3 verify_hai.py            # schema, cleanliness, published-episode check
+python3 sentinel.py --p0a        # the result. exits 1.
+```
+
+A cold clone is the reproducibility boundary. CI runs the no-data steps on
+every push.
 
 ## Method
 
-Registered predictions, numbered. An anti-vacuity control showing the
-instrument can return null. Refutations kept and marked, never deleted. Numbers
-in prose pasted verbatim from script output. At least one prediction left unrun.
+Predictions registered before any data was fetched —
+[`PREREG.md`](PREREG.md) is the first commit, and it contains four files with
+no data and no scripts. Amendments are append-only; `gate_provenance.py`
+fails the build if a single character of the original registration is edited.
+Every constant lives in [`frozen.py`](frozen.py), sealed at digest
+`6005fb60`, which recomputes its own hash and refuses to run if a value
+changed.
+
+Refutations are kept. The failing first implementation of P0b is still
+published beside its correction. So is the withdrawn average-precision
+implementation, retained specifically so its own test can prove it fails.
+
+Defects found and kept during this work, several of them in our own code: a
+P0a gate that could not fail; a proposed discrimination test that false-passed
+30–47% against a null detector and was withdrawn before registration; an
+order-dependent AP implementation; a training file that is not attack-free; a
+provenance tool that dirtied the tree it was checking.
+
+## Registered but not run
+
+- **P2** — suspended. No citable eTaPR baseline on HAI 20.07 has been
+  identified.
+- **P4** — do the detectors flag injections that residual detection provably
+  cannot see?
+- **P6** — TIME_NULL, a detector whose only inputs are temporal, through
+  identical P5 machinery. If it passes, passing P5 establishes nothing alone.
+- **VERA** — the second detector. Not written. Its purpose is to test whether
+  this framework distinguishes materially different behaviour.
+
+## Prior work and scope
+
+- HAI dataset: [icsdataset/hai](https://github.com/icsdataset/hai), CC BY 4.0,
+  Affiliated Institute of ETRI. Not redistributed; `fetch_hai.sh` pulls it at
+  a pinned commit.
+- eTaPR is prior work by the HAI authors. No novelty is claimed for the
+  independent reimplementation, which exists to check our own scoring.
+- BATADAL predecessor:
+  [sentinel-batadal-validation](https://github.com/holland202/sentinel-batadal-validation)
+
+HAI is one testbed containing a simulated grid model. **It is not the power
+grid**, and nothing here generalises to an operating utility. The P0b control
+covers static state estimation only; the same injection may well be visible to
+a tracking or Kalman-type estimator, which is untested.
 
 ## Figures
 
-Both figures describe the registered method. Neither shows a result - there are none.
+Both describe the registered method, not results.
 
 ![Prereg gate structure](figures/prereg_gates.png)
 
-P0a and P0b gate everything downstream. If either anti-vacuity control fails, P1 and P3 are void rather than reported. P2 is suspended under amendment 1. P4 is registered and deliberately left unrun.
+P0a and P0b gate everything downstream. P2 is suspended under amendment 1. P4
+is registered and deliberately left unrun.
 
 ![FDIA null space](figures/fdia_nullspace.png)
 
-Why P0b can be stated as an exact integer. Residual-based bad-data detection measures distance to the column space of H, so an injection a = Hc moves the measurement along that space and leaves the residual identical. Structured injections are invisible by construction; unstructured ones are not. If the structured count is nonzero, the run identifies which of assumptions A1-A5 failed. See amendment 2.
+Residual-based detection measures distance to the column space of H, so an
+injection `a = Hc` moves the measurement along that space and leaves the
+residual identical. Structured injections are invisible under the registered
+assumptions; unstructured ones are not. If the structured count is nonzero,
+the run identifies which of A1–A3 failed. See amendment 2.
 
 SVG sources sit beside each PNG.
 
