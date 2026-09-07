@@ -3,10 +3,15 @@
 **A preregistered evaluation of anomaly detection on the HAI industrial
 control system benchmark.**
 
-**Result: P0a FAILED.** The detector did not satisfy the registered
-precondition required to interpret any attack-detection measurement.
-Therefore `test1` was never read, P1 and P3 are VOID, and **no
-attack-detection result is claimed.**
+**Two detectors, two outcomes. `test1` has still never been read.**
+
+SENTINEL's P0a **FAILED** — it did not satisfy the registered precondition
+required to interpret any attack-detection measurement, so P1 and P3 are VOID.
+VERA's P7a **PASSED** on the same held-out slice under amendment 5, which is
+the first anti-vacuity gate this repository has cleared.
+
+**No attack-detection result is claimed by either.** A passing gate licenses
+opening `test1`; it has not been opened.
 
 The useful result here is not a better score. It is knowing when a score is
 not justified.
@@ -40,7 +45,9 @@ the package)
 
 ---
 
-## The result
+## The results
+
+### SENTINEL — P0a FAILED
 
 `sentinel.py`, JSD over a sliding window, every constant imported from a
 sealed freeze. Fit on `train1[:60%]`, calibrate on the next 20%, measure P0a
@@ -67,6 +74,38 @@ variance change, not the drift story. The original claim stays in the history.
 → [`p0a_result.json`](p0a_result.json) ·
 [`p0a_score_characterization.json`](p0a_score_characterization.json) ·
 [`p0a_characterization.py`](p0a_characterization.py)
+
+### VERA — P7a PASSED, P7b and P7c refuted
+
+Ridge dynamics plus split conformal, transferred unchanged from the BATADAL
+predecessor and registered in amendment 5 *before* the code existed. Same
+file, same frozen split, same alpha.
+
+```
+P7a  held-out breach 0.115845   in [0.05, 0.2]        PASS
+P7b  SD ratio       0.9351      predicted < 0.90      REFUTED
+P7c  coverage       0.8842      predicted > 0.90      REFUTED
+```
+
+**P7b is the informative one.** SENTINEL and VERA share no mathematics but
+read the same file across the same split boundary. If the variance collapse
+that failed P0a were a property of the data, both should show it. VERA
+narrows in the same direction but far more weakly — 0.9351 against SENTINEL's
+0.764 — so the collapse is largely an artefact of the windowed JSD score
+itself, not of `train1`.
+
+P7c was registered as **not blind**: it was informed by SENTINEL's already
+published 0.042402 on the same slice, that dependence was stated in the
+amendment rather than hidden, and it was refuted anyway.
+
+A defect of ours travelled with this. Amendment 5 registered P8 as measured
+on `train1`, which has zero attack rows — so it could not have been refuted
+by any measurement. The run meant to test it printed the problem instead of
+reinterpreting it. P8 is void; amendment 6 replaces it with P10, correctly
+scoped to `EVAL_FILE`.
+
+→ [`vera_p0a.py`](vera_p0a.py) · amendments 5 and 6 in
+[`PREREG.md`](PREREG.md)
 
 ## What passed
 
@@ -124,8 +163,11 @@ provenance tool that dirtied the tree it was checking.
   cannot see?
 - **P6** — TIME_NULL, a detector whose only inputs are temporal, through
   identical P5 machinery. If it passes, passing P5 establishes nothing alone.
-- **VERA** — the second detector. Not written. Its purpose is to test whether
-  this framework distinguishes materially different behaviour.
+- **P10** — the coverage/detection exchange rate, replacing the void P8.
+  Gated behind P7a, which passed. Measured on `EVAL_FILE`, which is not yet
+  opened.
+- **P11** — VERA's coverage shortfall is 0.0158. Real drift at small scale, or
+  sampling noise at n = 61,919? Needs a null not yet specified.
 
 ## Prior work and scope
 
