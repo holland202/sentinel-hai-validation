@@ -489,3 +489,90 @@ The P1 sweep grid is enumerated as 3 x 3 = 9 configurations, windows
 with enough configurations, two metrics disagreeing somewhere becomes
 near-certain and P1 stops being a claim. **Enlarging this grid after seeing
 results would be fraud, not amendment.**
+
+---
+
+### Amendment 5 — 2026-09-06, after P0a failed and before any VERA run
+
+**Status of the original P3. VOID and staying void.** Section 1 states that a
+failed P0 voids P1-P3 "in either direction", and P0a failed at c96bc30 with
+held-out breach 0.042402 against the registered [0.05, 0.2]. P3 is not
+reinstated, not reworded, and not reported. What follows is a new registration
+that happens to concern the same subject.
+
+**Why a new registration is needed rather than nothing.** P0a is written as a
+test of *both* detectors on a held-out slice of training data. Only SENTINEL
+was run: `p0a_result.json` records window 60, threshold 28.845140, 59 channels.
+VERA has no P0a result at all. Its arm is unrun, not failed.
+
+**What the characterization changed.** The commit at d2861c2 refuted the
+explanation given for the P0a failure. Held-out scores are not systematically
+lower; the held-out mean is HIGHER, 25.2869 against calibration 25.1206. The
+spread narrowed: SD 2.6027 -> 1.9876, ratio 0.764. With the threshold in the
+upper tail, a narrower distribution breaches less even as the centre rises.
+KS = 0.108000, P(held-out exceeds calibration) = 0.545947. Held-out thirds are
+not monotone: H1 breach 0.081911, H2 0.019302, H3 0.025993.
+
+So the phenomenon under test on HAI is a VARIANCE CHANGE across the split
+boundary, not the level drift P3 was written for. The predictions below aim at
+the phenomenon that was actually measured.
+
+#### P7a — VERA's own normal-vs-normal null
+
+VERA (ridge dynamics plus split conformal, unchanged from `vera_batadal.py` in
+sentinel-batadal-validation) is run on the same held-out slice of train1, at
+CONFORMAL_ALPHA = 0.10.
+
+**Predicted:** held-out breach rate falls in [0.05, 0.20], the interval already
+registered for P0a.
+
+If this fails, the VERA arm is gated exactly as SENTINEL's was: P7c and P8
+become VOID and test1 stays unread.
+
+#### P7b — shared cause, the discriminating test
+
+SENTINEL and VERA share no mathematics. They read the same file across the same
+split boundary.
+
+**Predicted:** VERA's held-out residual SD is lower than its calibration
+residual SD by a ratio below 0.90, matching the direction of SENTINEL's 0.764.
+
+If TRUE, the variance narrowing is a property of the train1 split, visible to
+two unrelated detectors, and is not a JSD artefact. If FALSE, it is specific to
+SENTINEL's windowed JSD score, and P0a's failure is about the instrument rather
+than the data. Both outcomes are informative and neither rescues P0a.
+
+#### P7c — direction of the coverage error
+
+**Predicted:** VERA's clean held-out conformal coverage EXCEEDS nominal 0.90 —
+over-coverage, the opposite sign to BATADAL's 0.697.
+
+**This prediction is not blind and is weaker for it.** It is informed by
+SENTINEL's already-published held-out breach of 0.042402, which is
+over-coverage on the same slice. It is registered as a directional prediction
+with that dependence disclosed, not as an independent test.
+
+#### P8 — the exchange rate off BATADAL
+
+On BATADAL, repairing conformal coverage with clipped adaptive conformal cost
+detection: S 0.796 -> 0.749, a measured -0.047 (`vera_aci_clip.py`, P8, in
+sentinel-batadal-validation at ce72953).
+
+**Predicted:** on HAI the exchange rate has the same sign — repairing coverage
+costs detection — measured on train1 only.
+
+Refuted if adaptive conformal improves detection or leaves it unchanged. A
+refutation localises the tension to BATADAL's drift; a confirmation makes it a
+property of split conformal on ICS telemetry.
+
+#### P9 — left unrun. The door.
+
+Are the non-monotone held-out thirds (H1 0.081911, H2 0.019302, H3 0.025993) a
+property of the process or of where the two-stage split falls? Answering it
+requires re-splitting, which touches frozen constants, and is therefore a
+separate registration and not part of this amendment.
+
+**Unchanged by this amendment:** the freeze at digest 6005fb60, the version pin
+at HAI 20.07, train2's exclusion as contaminated, the P0a threshold, interval,
+split, window and bins, and the rule that test1 stays unread until a P0 gate
+passes.
