@@ -576,3 +576,63 @@ separate registration and not part of this amendment.
 at HAI 20.07, train2's exclusion as contaminated, the P0a threshold, interval,
 split, window and bins, and the rule that test1 stays unread until a P0 gate
 passes.
+
+---
+
+### Amendment 6 — 2026-09-06, correcting a defective registration in Amendment 5
+
+**The defect.** Amendment 5 registers P8 as "measured on train1 only".
+`frozen.FIT_FILE` contains 0 attack rows — measured, 0 of 309,600 — so no
+detection quantity is defined on it and there is no exchange rate to compute.
+As worded, P8 is not a hard prediction. It could not have been refuted by any
+measurement, which is the defect this project exists to catch, appearing in
+its own prereg.
+
+The error was introduced in drafting Amendment 5 and was found by the run that
+was supposed to test it, `vera_p0a.py` at e2fb651, which printed the problem
+instead of quietly reinterpreting the prediction into something runnable.
+
+**What is not being done.** P8 is not rescued by redefining "detection" as an
+alarm rate on clean data. That would be a different quantity chosen after the
+fact to make a registered prediction reachable.
+
+**P8 as registered is VOID.** It is not reworded and not reported.
+
+#### P10 — the exchange rate, correctly scoped
+
+Replaces the void P8. Gated behind P7a, which PASSED at e2fb651 with held-out
+breach 0.115845 in [0.05, 0.20].
+
+On BATADAL, repairing conformal coverage with clipped adaptive conformal cost
+detection: S 0.796 -> 0.749, a measured -0.047 (`vera_aci_clip.py` P8, in
+sentinel-batadal-validation at ce72953).
+
+**Measured on `frozen.EVAL_FILE`**, which this amendment does not itself open.
+Fitting and calibration stay on train1 under the frozen split; EVAL_FILE
+supplies attack labels and nothing else. The detection metric is stated before
+the run: eTaPR as characterised in ETAPR_DEFECT_REPORT.md, with F1 reported
+alongside it, both computed by the independent implementation.
+
+**Predicted:** repairing coverage on HAI costs detection — the same sign as
+BATADAL's -0.047.
+
+Refuted if adaptive conformal improves detection or leaves it within noise.
+A refutation localises the tension to BATADAL's drift. A confirmation makes it
+a property of split conformal on ICS telemetry, which is the claim the two-
+benchmark series was built to test.
+
+**This is a one-detector result and will be reported as one.** SENTINEL's P0a
+failed at c96bc30 and its arm remains gated. A repository built to compare two
+detectors will, on this prediction, have measured one.
+
+#### P11 — left unrun. The door.
+
+VERA's held-out coverage is 0.8842 against nominal 0.90, a shortfall of 0.0158
+— under-covering, but by a quarter of the 0.05 threshold that the void P3 used
+and by far less than BATADAL's 0.203. Is that residual shortfall a real drift
+signal at a much smaller scale, or sampling noise at n = 61,919? Distinguishing
+them needs a null this amendment does not specify.
+
+**Unchanged:** the freeze at digest 6005fb60, the HAI 20.07 pin, train2's
+exclusion, the frozen split, threshold, window and bins, and the rule that
+opening EVAL_FILE is a separate deliberate act recorded in its own commit.
