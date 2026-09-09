@@ -3,7 +3,7 @@
 **A preregistered evaluation of anomaly detection on the HAI industrial
 control system benchmark.**
 
-**Two detectors, two outcomes. `test1` has still never been read.**
+**Two detectors, two outcomes. No detector has scored `test1`.**
 
 SENTINEL's P0a **FAILED** — it did not satisfy the registered precondition
 required to interpret any attack-detection measurement, so P1 and P3 are VOID.
@@ -11,7 +11,9 @@ VERA's P7a **PASSED** on the same held-out slice under amendment 5, which is
 the first anti-vacuity gate this repository has cleared.
 
 **No attack-detection result is claimed by either.** A passing gate licenses
-opening `test1`; it has not been opened.
+scoring `test1`; no detector has scored it. Its label columns have been read
+once, by `verify_hai.py`, to cross-check the dataset authors' published
+episode counts.
 
 The useful result here is not a better score. It is knowing when a score is
 not justified.
