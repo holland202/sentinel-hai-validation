@@ -1,12 +1,11 @@
 cff-version: 1.2.0
-message: "If you use this repository in your work, please cite it as below."
-title: "sentinel-hai-validation: Preregistered evaluation of anomaly detection on the HAI industrial control system benchmark"
+message: "If you use this software, please cite it as below."
+title: "sentinel-hai-validation: Preregistered anomaly-detection evaluation on the HAI benchmark"
 authors:
   - family-names: "Holland"
     given-names: "Chad"
     alias: "holland202"
 version: "0.1.0"
-date-released: "2026-09-03"
 url: "https://github.com/holland202/sentinel-hai-validation"
 repository-code: "https://github.com/holland202/sentinel-hai-validation"
 license: MIT
@@ -16,5 +15,6 @@ keywords:
   - HAI benchmark
   - preregistration
   - conformal prediction
-  - evaluation methodology
+  - provenance
   - anti-vacuity
+type: software

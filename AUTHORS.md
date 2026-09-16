@@ -2,32 +2,34 @@
 
 ## Origin
 
-**Chad Holland** (`holland202`)
+Chad Holland (GitHub: holland202; full name as it appears in LICENSE.md: Chad Edward Holland)
 
-Supported by repository history: initial preregistration commit, detector implementations, evaluation harness, defect reports, and maintenance.
+Repository history, LICENSE.md copyright notice, and commit authorship establish Chad Holland as the originator of this validation repository and the primary author of the code and documentation present here.
 
 ## Contribution Categories
 
-| Category | Attribution | Basis |
-|----------|-------------|-------|
-| ORIGIN | Chad Holland | Repository creation and preregistered evaluation design |
-| CONCEPT | Chad Holland | Preregistration-first methodology; anti-vacuity gates; explicit VOID/FAIL states |
-| IMPLEMENTATION | Chad Holland | Detectors (SENTINEL, VERA), frozen constants, gate provenance tools, evaluation scripts |
-| EXPERIMENT | Chad Holland | P0a, P0b, P7a–P7c and related registered measurements |
-| ANALYSIS | Chad Holland | Characterization of failures, variance analysis, defect reporting on eTaPR |
-| RESULT | Observed outcomes only (see PROVENANCE.md) | Not claims beyond the registered experiments |
-| REPRODUCTION | None recorded | No independent third-party reproduction entries exist |
-| REFUTATION | Documented in-repo | Multiple retained failures and voided claims |
-| MAINTENANCE | Chad Holland | Provenance tools, freeze digests, CI-oriented checks |
+Based on repository history and available evidence:
+
+| Category          | Attribution                                      |
+|-------------------|--------------------------------------------------|
+| ORIGIN            | Chad Holland                                     |
+| CONCEPT           | Chad Holland                                     |
+| IMPLEMENTATION    | Chad Holland                                     |
+| EXPERIMENT        | Chad Holland                                     |
+| ANALYSIS          | Chad Holland                                     |
+| RESULT            | Observed results (including failures and VOID states) are recorded; they are not elevated beyond the experiments that produced them |
+| REPRODUCTION      | None recorded in this repository                 |
+| REFUTATION        | Multiple failures, withdrawn components, and refuted predictions are retained as first-class records |
+| MAINTENANCE       | Chad Holland                                     |
 
 ## Other Contributors
 
-None identified from repository history.
+No other human contributors are established by the repository history at the time of this document.
 
 ## Automated Assistance
 
-Material assistance from AI systems in documentation, analysis, and tooling is acknowledged where it occurred. AI systems are not listed as human authors.
+Material assistance from AI systems in implementation, documentation, testing, or research support is not itemized in the current repository record. Any such assistance does not constitute human authorship.
 
-## Scope of Attribution
+## Scope Note
 
-Attribution is limited to what the commit history and available artifacts support. No additional contributors or independent verification are inferred.
+Authorship statements above are limited to what the repository history supports. They do not constitute claims of scientific priority, novelty, or independent verification.
