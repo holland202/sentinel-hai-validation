@@ -77,6 +77,11 @@ variance change, not the drift story. The original claim stays in the history.
 [`p0a_score_characterization.json`](p0a_score_characterization.json) ·
 [`p0a_characterization.py`](p0a_characterization.py)
 
+**And the obvious instrument explanation is ruled out (EB-001, 2026-10-31).** An external review suggested the
+variance collapse came from fit-range bin edges clipping held-out values into the edge bins. Edge-bin mass
+does not rise across the split (−0.0016; 41 of 59 channels lose edge mass), so that hypothesis is refuted and
+the cause is still open. Self-tested, not blind; see [`EB001/RESULTS.md`](EB001/RESULTS.md).
+
 ### VERA — P7a PASSED, P7b and P7c refuted
 
 Ridge dynamics plus split conformal, transferred unchanged from the BATADAL
