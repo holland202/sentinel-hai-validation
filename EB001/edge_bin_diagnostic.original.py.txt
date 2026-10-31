@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""
+edge_bin_diagnostic.py - test the clipping hypothesis for SENTINEL's P0a failure.
+
+HYPOTHESIS UNDER TEST (from external review of sentinel.py):
+sentinel.py builds per-channel histogram bin edges from the FIT split's
+min/max. Held-out values outside [lo, hi] are clipped into the edge bins by
+np.clip(np.digitize(...), 0, JSD_BINS - 1). P0a measured: held-out JSD mean
+HIGHER (25.2869 vs 25.1206) while SD FALLS (2.6027 -> 1.9876). A rising centre
+with hard tail clipping compresses window histograms toward the reference
+shape - exactly that signature. If held-out ticks pile into edge bins
+materially more than calibration ticks, the P0a failure is an instrument
+defect (bin construction), not a property of train1 and not a transfer
+failure. That is fixable. If edge mass is flat across the split, the
+hypothesis is REFUTED and the variance collapse lives elsewhere.
+
+STATUS: diagnostic only. This script changes NOTHING and proposes nothing.
+No constant is altered, no binning is re-tuned, test1 is not read.
+If the hypothesis is supported, the fix is an amendment-scale decision:
+new edge construction registered before any run, with the split re-scored
+under both constructions and both numbers reported. A silent re-tune
+discovered after the fact is the exact defect this repository exists to
+prevent.
+
+Order of operations: reproduce the published P0a numbers FIRST. A
+diagnostic that cannot reproduce the measurement it tries to explain is
+itself defective, and says so.
+"""
+
+import gzip
+import json
+import os
+import sys
+import time
+
+import numpy as np
+
+import frozen
+
+DATA = "data"
+LN2 = np.log(2.0)
+OUT = "edge_bin_diagnostic.json"
+
+
+def load(name, limit=None):
+    """Identical to sentinel.py:load. Same parser, same exclusions."""
+    path = os.path.join(DATA, f"{name}.csv.gz")
+    rows, labels = [], []
+    with gzip.open(path, "rt") as f:
+        header = [h.strip() for h in f.readline().rstrip("\n").split(frozen.DELIMITER)]
+        keep = [i for i, h in enumerate(header) if h not in frozen.EXCLUDED_COLUMNS]
+        li = header.index(frozen.PRIMARY_LABEL)
+        for line in f:
+            p = line.rstrip("\n").split(frozen.DELIMITER)
+            if len(p) != len(header):
+                continue
+            rows.append([float(p[i]) for i in keep])
+            labels.append(int(float(p[li])))
+            if limit and len(rows) >= limit:
+                break
+    return (np.asarray(rows, dtype=float),
+            np.asarray(labels, dtype=int),
+            [header[i] for i in keep])
+
+
+def reference_histograms(X):
+    """Identical to sentinel.py: bin edges from the fit split min/max."""
+    edges, ref = [], []
+    for j in range(X.shape[1]):
+        col = X[:, j]
+        lo, hi = float(col.min()), float(col.max())
+        if hi <= lo:
+            hi = lo + 1e-12
+        e = np.linspace(lo, hi, frozen.JSD_BINS + 1)
+        h, _ = np.histogram(col, bins=e)
+        edges.append(e)
+        ref.append(h.astype(float) / max(1, h.sum()))
+    return edges, np.asarray(ref)
+
+
+def digitize_into_fit_bins(X, edges):
+    """Return (idx, out_of_range_fraction). Same clip as sentinel.py."""
+    n, m = X.shape
+    idx = np.empty((n, m), dtype=np.int32)
+    oor = np.zeros(m)
+    for j in range(m):
+        idx[:, j] = np.clip(
+            np.digitize(X[:, j], edges[j][1:-1]), 0, frozen.JSD_BINS - 1)
+        lo, hi = edges[j][0], edges[j][-1]
+        oor[j] = float(np.mean((X[:, j] < lo) | (X[:, j] > hi)))
+    return idx, oor
+
+
+def jsd_from_idx(idx, ref, window):
+    """Score stream from pre-digitized indices. Mirrors sentinel.py:jsd_scores
+    exactly - same incremental counts, same JSD, same warmup exclusion."""
+    n, m = idx.shape
+    counts = np.zeros((m, frozen.JSD_BINS), dtype=np.float64)
+    scores = np.full(n, np.nan)
+    eps = 1e-12
+    for t in range(n):
+        counts[np.arange(m), idx[t]] += 1.0
+        if t >= window:
+            counts[np.arange(m), idx[t - window]] -= 1.0
+        if t + 1 < window:
+            continue
+        p = counts / window
+        mix = 0.5 * (p + ref)
+        kl_p = np.sum(p * np.log((p + eps) / (mix + eps)), axis=1)
+        kl_q = np.sum(ref * np.log((ref + eps) / (mix + eps)), axis=1)
+        scores[t] = float(np.sum(0.5 * (kl_p + kl_q)) / LN2)
+    return scores
+
+
+def conformal_quantile(cal_scores, alpha):
+    s = np.sort(cal_scores[~np.isnan(cal_scores)])
+    n = len(s)
+    k = int(np.ceil((n + 1) * (1.0 - alpha)))
+    k = min(max(k, 1), n)
+    return float(s[k - 1]), n
+
+
+def main():
+    window = frozen.P5_REFERENCE_CONFIG[0]
+    alpha = frozen.CONFORMAL_ALPHA
+
+    print("edge_bin_diagnostic.py - clipping hypothesis for the P0a failure")
+    print(f"freeze digest {frozen.FREEZE_DIGEST[:16]}  window {window}s  "
+          f"bins {frozen.JSD_BINS}")
+    print("diagnostic only: nothing is changed, test1 is not read")
+    print()
+
+    t0 = time.time()
+    X, y, chans = load(frozen.FIT_FILE)
+    assert y.sum() == 0, "fit file is not attack-free - see Amendment 4"
+    cut = int(len(X) * frozen.FIT_FRACTION)
+    Xf, rest = X[:cut], X[cut:]
+    half = len(rest) // 2
+    Xc, Xh = rest[:half], rest[half:]
+    print(f"{frozen.FIT_FILE}: fit {len(Xf)}  calibrate {len(Xc)}  "
+          f"held-out {len(Xh)}  [{time.time()-t0:.1f}s]")
+
+    edges, ref = reference_histograms(Xf)
+    idx_c, _ = digitize_into_fit_bins(Xc, edges)
+    idx_h, oor_h = digitize_into_fit_bins(Xh, edges)
+
+    # ---- step 1: reproduce the published measurement before adding to it
+    t1 = time.time()
+    cal = jsd_from_idx(idx_c, ref, window)
+    hld = jsd_from_idx(idx_h, ref, window)
+    q, ncal = conformal_quantile(cal, alpha)
+    valid = hld[~np.isnan(hld)]
+    breach = float(np.mean(valid > q))
+    lo, hi = 0.5 * alpha, 2.0 * alpha
+    cal_v = cal[~np.isnan(cal)]
+    repro = {
+        "breach_rate_heldout": breach,
+        "threshold": q,
+        "heldout_mean": float(np.mean(valid)),
+        "heldout_sd": float(np.std(valid)),
+        "calibration_mean": float(np.mean(cal_v)),
+        "calibration_sd": float(np.std(cal_v)),
+    }
+    print()
+    print("step 1 - reproduction of p0a_result.json")
+    print(f"  breach {breach:.6f}  (registered [{lo}, {hi}], published "
+          f"0.042402)")
+    print(f"  held-out mean {repro['heldout_mean']:.4f} sd "
+          f"{repro['heldout_sd']:.4f}   calibration mean "
+          f"{repro['calibration_mean']:.4f} sd {repro['calibration_sd']:.4f}")
+    published = {"breach": 0.042402, "h_mean": 25.2869, "h_sd": 1.9876,
+                 "c_mean": 25.1206, "c_sd": 2.6027}
+    ok = (abs(breach - published["breach"]) < 5e-7 and
+          abs(repro["heldout_mean"] - published["h_mean"]) < 1e-3 and
+          abs(repro["heldout_sd"] - published["h_sd"]) < 1e-3)
+    print(f"  reproduction {'CONSISTENT with published numbers' if ok else "
+          "DOES NOT MATCH published numbers - diagnostic is VOID on this run'}")
+
+    # ---- step 2: edge-bin mass, per channel, both slices
+    edge_c = (idx_c == 0) | (idx_c == frozen.JSD_BINS - 1)
+    edge_h = (idx_h == 0) | (idx_h == frozen.JSD_BINS - 1)
+    mass_c = edge_c.mean(axis=0)   # per-channel: fraction of ticks in an edge bin
+    mass_h = edge_h.mean(axis=0)
+    delta = mass_h - mass_c
+
+    print()
+    print("step 2 - edge-bin mass (fraction of ticks landing in bin 0 or "
+          f"bin {frozen.JSD_BINS - 1}, per channel)")
+    print(f"  overall  calibration {edge_c.mean():.6f}   held-out "
+          f"{edge_h.mean():.6f}   delta {edge_h.mean() - edge_c.mean():+.6f}")
+    print(f"  held-out channel-values outside the fit range [lo, hi]: "
+          f"{oor_h.mean():.6f} mean over channels, max {oor_h.max():.6f}")
+
+    order = np.argsort(-np.abs(delta))
+    print()
+    print(f"  {'channel':34s} {'cal':>9s} {'heldout':>9s} {'delta':>9s}")
+    for j in order[:12]:
+        print(f"  {chans[j]:34s} {mass_c[j]:9.6f} {mass_h[j]:9.6f} "
+              f"{delta[j]:+9.6f}")
+    n_up = int(np.sum(delta > 0))
+    print(f"  ... {n_up} of {len(delta)} channels gain edge mass across the "
+          f"split boundary, {len(delta) - n_up} lose it")
+
+    # ---- step 3: does the per-channel edge-mass gain track the instrument
+    # channels that dominate the score? Report; the human reads it.
+    contrib_c = np.var(cal_v)  # stream-level, kept simple and stated as such
+    print()
+    print("step 3 - interpretation aid")
+    print(f"  SD ratio held-out/calibration: "
+          f"{repro['heldout_sd'] / repro['calibration_sd']:.4f} "
+          f"(published 0.764)")
+    print("  If delta is broad-based and positive, clipping is compressing")
+    print("  tails on most channels at once - the variance collapse is an")
+    print("  instrument artefact and P0a's failure is a bin-construction")
+    print("  defect. If delta is flat, the hypothesis is REFUTED.")
+
+    out = {
+        "freeze_digest": frozen.FREEZE_DIGEST,
+        "window": window, "alpha": alpha,
+        "reproduction_consistent": bool(ok),
+        "reproduced": repro,
+        "p0a_interval": [lo, hi],
+        "edge_mass_calibration": float(edge_c.mean()),
+        "edge_mass_heldout": float(edge_h.mean()),
+        "edge_mass_delta": float(edge_h.mean() - edge_c.mean()),
+        "out_of_fit_range_heldout_mean": float(oor_h.mean()),
+        "out_of_fit_range_heldout_max": float(oor_h.max()),
+        "channels_gain_edge_mass": n_up,
+        "channels_total": int(len(delta)),
+        "per_channel": {
+            "channel": [chans[j] for j in order],
+            "mass_calibration": [float(mass_c[j]) for j in order],
+            "mass_heldout": [float(mass_h[j]) for j in order],
+            "delta": [float(delta[j]) for j in order],
+        },
+    }
+    json.dump(out, open(OUT, "w"), indent=2)
+    print()
+    print(f"written {OUT}")
+    print("diagnostic only - no constant changed, no fix applied, test1 not "
+          "read. A fix, if warranted, is a new registration.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
