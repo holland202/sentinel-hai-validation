@@ -1,0 +1,40 @@
+edge_bin_diagnostic.py - clipping hypothesis for the P0a failure
+freeze digest 6005fb60e473dfdf  window 60s  bins 64
+diagnostic only: nothing is changed, test1 is not read
+
+train1: fit 185760  calibrate 61920  held-out 61920  [4.3s]
+
+step 1 - reproduction of p0a_result.json
+  breach 0.042402  (registered [0.05, 0.2], published 0.042402)
+  held-out mean 25.2869 sd 1.9876   calibration mean 25.1206 sd 2.6027
+  reproduction CONSISTENT with published numbers
+
+step 2 - edge-bin mass (fraction of ticks landing in bin 0 or bin 63, per channel)
+  overall  calibration 0.323533   held-out 0.321962   delta -0.001571
+  held-out channel-values outside the fit range [lo, hi]: 0.004443 mean over channels, max 0.116053
+
+  channel                                  cal   heldout     delta
+  P4_ST_PS                            0.569767  1.000000 +0.430233
+  P1_B2004                            0.348337  0.057865 -0.290472
+  P1_PIT02                            0.413211  0.343750 -0.069461
+  P1_FT02                             0.600161  0.538630 -0.061531
+  P2_VXT03                            0.069364  0.103085 +0.033721
+  P1_FCV02Z                           0.829215  0.805265 -0.023950
+  P1_B4005                            0.549935  0.527923 -0.022012
+  P4_HT_LD                            0.387177  0.371980 -0.015197
+  P2_VXT02                            0.044170  0.059141 +0.014971
+  P3_LT01                             0.052019  0.037742 -0.014276
+  P1_B400B                            0.601017  0.587419 -0.013598
+  P1_FT02Z                            0.600904  0.587500 -0.013404
+  ... 18 of 59 channels gain edge mass across the split boundary, 41 lose it
+
+step 3 - interpretation aid
+  SD ratio held-out/calibration: 0.7637 (published 0.764)
+  If delta is broad-based and positive, clipping is compressing
+  tails on most channels at once - the variance collapse is an
+  instrument artefact and P0a's failure is a bin-construction
+  defect. If delta is flat, the hypothesis is REFUTED.
+
+written edge_bin_diagnostic.json
+diagnostic only - no constant changed, no fix applied, test1 not read. A fix, if warranted, is a new registration.
+exit=0
