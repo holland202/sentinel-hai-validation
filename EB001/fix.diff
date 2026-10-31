@@ -1,0 +1,7 @@
+176,177c176,178
+<     print(f"  reproduction {'CONSISTENT with published numbers' if ok else "
+<           "DOES NOT MATCH published numbers - diagnostic is VOID on this run'}")
+---
+>     verdict = ('CONSISTENT with published numbers' if ok else
+>                'DOES NOT MATCH published numbers - diagnostic is VOID on this run')
+>     print(f"  reproduction {verdict}")
